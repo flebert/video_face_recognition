@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "actor_face_recognition"
+version = "0.1.0"
+description = ""
+authors = ["flebert <73312500+flebert@users.noreply.github.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+python-vlc = "^3.0.12118"
+Pillow = "^8.3.2"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

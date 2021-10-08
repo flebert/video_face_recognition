@@ -1,0 +1,1 @@
+from src.VideoPlayer import VideoPlayerWindow
