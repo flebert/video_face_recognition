@@ -1,6 +1,6 @@
 import os
 import tkinter as tk
-from tkinter import font
+from tkinter import font, filedialog
 from PIL import Image
 from PIL.ImageTk import PhotoImage
 import vlc
@@ -19,6 +19,13 @@ class VideoPlayerWindow:
         root.grid_rowconfigure(0, weight=1)
         root.configure(bg="grey")
         self.root = root
+
+        # menubar
+        self.menubar = tk.Menu(self.root, tearoff=0)
+        file = tk.Menu(self.menubar, tearoff=0)
+        file.add_command(label="Open", command=lambda: self.__open_video())
+        self.menubar.add_cascade(label="File", menu=file)
+        self.root.config(menu=self.menubar)
 
         # setting default font
         def_font = font.nametofont("TkDefaultFont")
@@ -63,6 +70,7 @@ class VideoPlayerWindow:
         self.vlc_event_manager.event_attach(vlc.EventType.MediaPlayerTimeChanged,
                                             lambda event: self.__update_time(self.player.get_length(),
                                                                              self.player.get_time()))
+        self.source = initial_source
         if initial_source is not None:
             self.play_video(initial_source)
         self.__open_window()
@@ -71,18 +79,34 @@ class VideoPlayerWindow:
         self.root.geometry("400x400")
         self.root.mainloop()
 
-    def __close_window(self):
+    def __close_window(self, source=None, destroy_root=True):
         try:
-            # sometimes crashed if video was running and not paused before stopping it
-            if "State.Paused" != str(self.player.get_media().get_state()):
-                self.player.pause()
-        except AttributeError:
+            if source is None:
+                file_name = os.path.basename(self.source)
+            else:
+                file_name = os.path.basename(source)
+            file_name = file_name.split(".")[0]
+            self.instance.vlm_stop_media(file_name)
+        except TypeError:
             # no media source was loaded
             pass
-        self.player.stop()
-        self.root.destroy()
+        if destroy_root:
+            self.root.destroy()
+
+    def __open_video(self):
+        file = filedialog.askopenfilename(title="Select video file")
+        if len(file) != 0 and file != self.source:
+            source = self.source
+            try:
+                self.__close_window(destroy_root=False)
+                self.play_video(file)
+            except:
+                if source is not None:
+                    self.play_video(source)
 
     def play_video(self, source):
+        self.source = source
+
         # Function to start player from given source
         Media = self.instance.media_new(source)
         Media.get_mrl()
@@ -107,7 +131,7 @@ class VideoPlayerWindow:
 
     def __init_time_bar(self, length_in_ms):
         # number of overall seconds to make time scroll bar work in units of seconds
-        self.time_bar.configure(to=length_in_ms//1000, state="normal")
+        self.time_bar.configure(to=length_in_ms // 1000, state="normal")
         self.time.set(0)
 
         self.__update_time(length_in_ms, 0)
@@ -119,7 +143,7 @@ class VideoPlayerWindow:
         rest = rest % 3_600_000
         minutes = rest // 60_000
         rest = rest % 60_000
-        seconds = rest//1000
+        seconds = rest // 1000
 
         # fill with zeros such that it follows the format hh:mm:ss
         unit_list = []
@@ -129,7 +153,7 @@ class VideoPlayerWindow:
 
     def __update_time(self, length_in_ms, current_time_in_ms):
         self.__update_rest_time_label(length_in_ms, current_time_in_ms)
-        self.time.set(current_time_in_ms//1000)
+        self.time.set(current_time_in_ms // 1000)
 
     def __vlc_pause(self, event):
         if "State.Paused" != str(self.player.get_media().get_state()):
@@ -138,6 +162,6 @@ class VideoPlayerWindow:
     def __vlc_jump_to_scale_pos(self, event=None):
         if "State.Ended" == str(self.player.get_media().get_state()):
             self.play_video(self.player.get_media().get_mrl())
-        new_position = self.time.get()/(self.player.get_length()//1000)
+        new_position = self.time.get() / (self.player.get_length() // 1000)
         self.player.set_position(new_position)
         self.__update_rest_time_label(self.player.get_length(), self.player.get_time())
