@@ -94,6 +94,7 @@ class VideoPlayerWindow:
             self.root.destroy()
 
     def __open_video(self):
+        self.__pause_video()
         file = filedialog.askopenfilename(title="Select video file")
         if len(file) != 0 and file != self.source:
             source = self.source
