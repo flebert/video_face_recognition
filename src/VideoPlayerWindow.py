@@ -1,4 +1,5 @@
 import os
+import sys
 import tkinter as tk
 from tkinter import font, filedialog
 from PIL import Image
@@ -9,7 +10,7 @@ import vlc
 class VideoPlayerWindow:
     def __init__(self, initial_source=None):
         # path where images for pictures are stored
-        resource_path = os.path.join(os.path.abspath(__file__), "..", "..", "..", "resources")
+        resource_path = os.path.join(os.path.abspath(__file__), "..", "..", "resources")
 
         # root window
         root = tk.Tk()
@@ -166,3 +167,10 @@ class VideoPlayerWindow:
         new_position = self.time.get() / (self.player.get_length() // 1000)
         self.player.set_position(new_position)
         self.__update_rest_time_label(self.player.get_length(), self.player.get_time())
+
+
+# starting VideoPlayerWindow
+if len(sys.argv) > 1:
+    VideoPlayerWindow(sys.argv[1])
+else:
+    VideoPlayerWindow()
