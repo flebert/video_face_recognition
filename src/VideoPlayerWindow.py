@@ -12,6 +12,13 @@ from PIL import Image
 from PIL.ImageTk import PhotoImage
 import vlc
 
+# TODO: 1. let opencv open the video simultanously and synchronize with it
+#       2. let thread periodically request "analysis" (face-detection and recognition) of opencv
+#       3. translate position of surrounding rectangle (head) to that of vlc media player
+#       4. put canvas over vlc and draw rectangles+labels there
+#       5. store separately in format role|time|acc? the found information for later analysis
+#       6. add functionality to combine sound of vlc with discovered markers
+
 
 class VideoPlayerWindow:
     """
@@ -47,6 +54,14 @@ class VideoPlayerWindow:
         file = tk.Menu(self.__menubar, tearoff=0)
         file.add_command(label="Open", command=lambda: self.__open_video())
         self.__menubar.add_cascade(label="File", menu=file)
+
+        detector = tk.Menu(self.__menubar, tearoff=0)
+        self.__is_activated = tk.BooleanVar()
+        self.__is_activated.set(False)
+        self.__is_activated.trace_add("write", self.__switch_activation_state)
+        detector.add_radiobutton(label="Activated", variable=self.__is_activated, value=True)
+        detector.add_radiobutton(label="Deactivated", variable=self.__is_activated, value=False)
+        self.__menubar.add_cascade(label="Detector", menu=detector)
         self.__root.config(menu=self.__menubar)
 
         # setting default font
@@ -286,6 +301,12 @@ class VideoPlayerWindow:
         new_position = self.__time.get() / (self.__player.get_length() // 1000)
         self.__player.set_position(new_position)
         self.__update_rest_time_label(self.__player.get_length(), self.__player.get_time())
+
+    def __switch_activation_state(self, *args):
+        if self.__is_activated.get():
+            self.__root.resizable(False, False)
+        else:
+            self.__root.resizable(True, True)
 
 
 # starting VideoPlayerWindow with initial video path if given
