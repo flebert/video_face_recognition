@@ -55,7 +55,7 @@ class VideoPlayerWindow:
 
         # frame within root frame
         frame = tk.Frame(root, bg="black")
-        frame.grid(row=0, column=0, columnspan=3, sticky="NESW")
+        frame.grid(row=0, column=0, columnspan=5, sticky="NESW")
         frame.grid_rowconfigure(0, weight=1)
         self.__frame = frame
         """The main frame of the application, contains the video player"""
@@ -91,6 +91,28 @@ class VideoPlayerWindow:
         self.__rest_time_label = tk.Label(root, text="00:00:00", bd=-2, bg="grey")
         """Label showing the rest duration of the video file in the format hh:mm:ss"""
         self.__rest_time_label.grid(row=1, column=2, sticky="NSE")
+
+        # volume control icon
+        image = Image.open(os.path.join(resource_path, "speaker.png"))
+        resized = image.resize((25, 25))
+        self.__volume_img = PhotoImage(resized)
+        volume_label = tk.Label(root, image=self.__volume_img, bd=-2, bg="grey")
+        volume_label.grid(row=1, column=3, sticky="NSE", padx=(20, 0))
+
+        # volume spinbox
+        self.__volume = tk.IntVar()
+        self.__volume.set(50)
+        self.__volume_spinner = tk.Spinbox(root, from_=0, to=100, textvariable=self.__volume, state="readonly",
+                                           bd=-2, readonlybackground="grey", width=3, font=def_font, justify="right",
+                                           increment=2)
+        self.__volume_spinner.grid(row=1, column=4, sticky="NS")
+
+        def __change_audio():
+            volume = self.__volume.get()
+            self.__player.audio_set_volume(volume)
+            # fix placement of speaker symbol
+            self.__volume_spinner.configure(width=(len(str(volume))+1))
+        self.__volume.trace_add("write", lambda *event: __change_audio())
 
         # Creating VLC player
         self.__instance = vlc.Instance()
@@ -178,6 +200,7 @@ class VideoPlayerWindow:
         while length_in_ms == 0:
             length_in_ms = self.__player.get_length()
         self.__init_time_bar(length_in_ms)
+        self.__time_bar.configure(state="normal")
 
     def __pause_video(self):
         """Pauses the currently running video"""
@@ -199,7 +222,7 @@ class VideoPlayerWindow:
         :type length_in_ms: int
         """
         # number of overall seconds to make time scroll bar work in units of seconds
-        self.__time_bar.configure(to=length_in_ms // 1000, state="normal")
+        self.__time_bar.configure(to=length_in_ms // 1000)
         self.__time.set(0)
 
         self.__update_time(length_in_ms, 0)
@@ -247,7 +270,7 @@ class VideoPlayerWindow:
         Used to pause the video during the time the scrollbar slider is moved
         by the user.
         """
-        if "State.Paused" != str(self.__player.get_media().get_state()):
+        if self.source is not None and "State.Paused" != str(self.__player.get_media().get_state()):
             self.__pause_video()
 
     def __vlc_jump_to_scale_pos(self, event=None):
@@ -256,6 +279,8 @@ class VideoPlayerWindow:
         update the remaining duration label.
         Special case: If the video file ended before moving the slider, the video is restarted
         """
+        if self.source is None:
+            return
         if "State.Ended" == str(self.__player.get_media().get_state()):
             self.__play_video(self.__player.get_media().get_mrl())
         new_position = self.__time.get() / (self.__player.get_length() // 1000)
