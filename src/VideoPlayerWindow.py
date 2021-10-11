@@ -260,6 +260,7 @@ class VideoPlayerWindow:
         self.__player.set_position(new_position)
         self.__update_rest_time_label(self.__player.get_length(), self.__player.get_time())
 
+
 # starting VideoPlayerWindow with initial video path if given
 if len(sys.argv) > 1:
     VideoPlayerWindow(sys.argv[1])

@@ -1,2 +1,5 @@
 # video files used for initial testing (not owned)
 /test_files/
+
+# pycharm .idea files
+/.idea
