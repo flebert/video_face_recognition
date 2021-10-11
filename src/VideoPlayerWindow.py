@@ -141,7 +141,8 @@ class VideoPlayerWindow:
         Opens a dialog to select a video file to open and if a file was selected,
         closes the current video and opens the new one
         """
-        self.__pause_video()
+        if self.source is not None:
+            self.__vlc_pause()
         file = filedialog.askopenfilename(title="Select video file")
         if len(file) != 0 and file != self.source:
             source = self.source
@@ -151,6 +152,7 @@ class VideoPlayerWindow:
             except:
                 if source is not None:
                     self.__play_video(source)
+            self.__resume_video()
 
     def __play_video(self, source):
         """
@@ -239,7 +241,7 @@ class VideoPlayerWindow:
         self.__update_rest_time_label(length_in_ms, current_time_in_ms)
         self.__time.set(current_time_in_ms // 1000)
 
-    def __vlc_pause(self, event):
+    def __vlc_pause(self, event=None):
         """
         Pauses the video in case the video is not already paused.
         Used to pause the video during the time the scrollbar slider is moved
