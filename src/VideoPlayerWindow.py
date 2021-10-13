@@ -76,7 +76,7 @@ class VideoPlayerWindow:
         self.__frame = frame
         """The main frame of the application, contains the video player"""
 
-        # Creating VLC player
+        # Creating VLC player manager
         self.__vlc_player = VLCPlayer(self.__frame.winfo_id())
         self.__vlc_player.register_event("MediaPlayerTimeChanged",
                                          lambda event: self.__update_time(self.__vlc_player.get_duration_in_sec(),
@@ -259,6 +259,9 @@ class VideoPlayerWindow:
 
     def __switch_activation_state(self, index):
         """
+        Depending on the field '__is_activated' either the Detector (Face recognition) is activated or deactivated,
+        to make the calculation of surrounding rectangles simpler, resizing of the root window is only possible during
+        the deactivated state
         :param index: the index of the detector menu item
         :type index: int
         """
