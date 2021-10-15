@@ -1,6 +1,7 @@
 import os
 
 import vlc
+import time
 
 
 class VLCPlayer:
@@ -38,7 +39,8 @@ class VLCPlayer:
     def get_robust_duration_in_sec(self):
         """
         Returns the duration of the media file in seconds.
-        It makes sure that the time was already updated and is not 0 or less
+        It makes sure that the time was already updated and is not 0 or less.
+        It waits it most 2 seconds and probes for the duration 1000 times.
 
         :rtype int
         """
@@ -47,6 +49,7 @@ class VLCPlayer:
         while length <= 0 and i < 1000:
             length = self.__player.get_length()
             i = i+1
+            time.sleep(0.002)
         return length // 1000
 
     def get_current_time_in_sec(self):
