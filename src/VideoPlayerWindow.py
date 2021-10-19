@@ -10,6 +10,7 @@ import tkinter as tk
 from tkinter import font, filedialog
 from PIL import Image
 from PIL.ImageTk import PhotoImage
+
 from src.VLCPlayer import VLCPlayer
 
 
@@ -77,10 +78,10 @@ class VideoPlayerWindow:
         """The main frame of the application, contains the video player"""
 
         # Creating VLC player manager
-        self.__vlc_player = VLCPlayer(self.__frame.winfo_id())
+        self.__vlc_player = VLCPlayer(self.__frame)
         self.__vlc_player.register_event("MediaPlayerTimeChanged",
                                          lambda event: self.__update_time(self.__vlc_player.get_duration_in_sec(),
-                                                                          self.__vlc_player.get_current_time_in_sec()))
+                                                                          self.__vlc_player.get_current_time_in_ms()))
 
         # play button
         button_size = (30, 30)
@@ -244,18 +245,18 @@ class VideoPlayerWindow:
             unit_list.append(str(unit).zfill(2))
         self.__rest_time_label.configure(text=":".join(unit_list))
 
-    def __update_time(self, length_in_sec, current_time_in_sec):
+    def __update_time(self, length_in_sec, current_time_in_ms):
         """
         Updates the field self.__time with the current time and calls
         self.__update_rest_time_label to set the remaining time label to the duration of the video
 
         :param length_in_sec: duration of the video file in seconds
         :type length_in_sec: int
-        :param current_time_in_sec: current time in the video file in seconds
-        :type current_time_in_sec: int
+        :param current_time_in_ms: current time in the video file in milliseconds
+        :type current_time_in_ms: int
         """
-        self.__update_rest_time_label(length_in_sec, current_time_in_sec)
-        self.__time.set(current_time_in_sec)
+        self.__update_rest_time_label(length_in_sec, current_time_in_ms//1000)
+        self.__time.set(current_time_in_ms//1000)
 
     def __switch_activation_state(self, index):
         """

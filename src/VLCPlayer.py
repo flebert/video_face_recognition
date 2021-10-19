@@ -2,12 +2,15 @@ import os
 
 import vlc
 import time
+import tkinter as tk
+
+from src.FrameExtractor import FrameExtractor
 
 
 class VLCPlayer:
     events = {"MediaPlayerTimeChanged": vlc.EventType.MediaPlayerTimeChanged}
 
-    def __init__(self, frame_id):
+    def __init__(self, frame):
         self.__instance = vlc.Instance()
         """VLC instance used to create the media player"""
         self.__player = self.__instance.media_player_new()
@@ -15,8 +18,14 @@ class VLCPlayer:
         self.__vlc_event_manager = self.__player.event_manager()
         """VLC event manager used to catch changes in time"""
 
-        self.__frame_id = frame_id
-        """Id of the frame where the vlc player should be shown in"""
+        self.__frame = frame
+        """Frame where the vlc player should be shown in"""
+
+        self.__img_label = tk.Label(frame, bd=-2, bg="black")
+        self.__img_label.grid(row=0, column=0)
+        self.__frame.grid_columnconfigure(0, weight=1)
+
+        self.__frame_extractor = FrameExtractor(self, self.__img_label)
 
     def register_event(self, event_type, command):
         """
@@ -40,7 +49,7 @@ class VLCPlayer:
         """
         Returns the duration of the media file in seconds.
         It makes sure that the time was already updated and is not 0 or less.
-        It waits it most 2 seconds and probes for the duration 1000 times.
+        It waits at most 2 seconds and probes for the duration 1000 times.
 
         :rtype int
         """
@@ -48,7 +57,7 @@ class VLCPlayer:
         i = 0
         while length <= 0 and i < 1000:
             length = self.__player.get_length()
-            i = i+1
+            i = i + 1
             time.sleep(0.002)
         return length // 1000
 
@@ -59,6 +68,14 @@ class VLCPlayer:
         :rtype int
         """
         return self.__player.get_time() // 1000
+
+    def get_current_time_in_ms(self):
+        """
+        Return the current time position in the media file in milliseconds
+
+        :rtype int
+        """
+        return self.__player.get_time()
 
     def set_audio_volume(self, volume):
         """
@@ -103,13 +120,15 @@ class VLCPlayer:
         :type media_path: str
         """
         # Open media source
-        Media = self.__instance.media_new(media_path)
-        Media.get_mrl()
-        self.__player.set_media(Media)
+        media = self.__instance.media_new(media_path)
+        media.get_mrl()
+        self.__player.set_media(media)
 
-        # self.player.play()
-        self.__player.set_hwnd(self.__frame_id)
+        media.parse()
+
+        self.__player.set_hwnd(self.__frame.winfo_id())
         self.__player.play()
+        self.__frame_extractor.start()
 
     def go_to_position(self, time_in_sec, update_gui_command, state_end_command):
         """
@@ -130,3 +149,9 @@ class VLCPlayer:
         new_position = time_in_sec / self.get_duration_in_sec()
         self.__player.set_position(new_position)
         update_gui_command(self.get_duration_in_sec(), self.get_current_time_in_sec())
+
+    def get_fps(self):
+        return self.__player.get_fps()
+
+    def get_player(self):
+        return self.__player
