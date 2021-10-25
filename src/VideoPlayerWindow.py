@@ -7,6 +7,7 @@ the frame is opened without any initial video file loaded.
 import os
 import sys
 import logging
+import time
 import tkinter as tk
 from tkinter import font, filedialog
 from PIL import Image
@@ -185,7 +186,7 @@ class VideoPlayerWindow:
         elif new_source == self.source:
             logger.info(f"{logger.vpw}: video file was identical to currently loaded one, continue with current one")
         else:
-            logger.info(f"{logger.vpw}: No video file select, continue with current one")
+            logger.info(f"{logger.vpw}: No video file selected, continue with current one")
 
     def __play_video(self, source):
         """
@@ -199,11 +200,11 @@ class VideoPlayerWindow:
         logger.info(f"{logger.vpw}: Starting opening the video file {source}")
         self.source = source
 
-        self.__vlc_player.open_media(source)
+        media_info = self.__vlc_player.open_media(source)
 
         self.__play_button.configure(state="normal")
-        length_in_sec = self.__vlc_player.get_robust_duration_in_sec()
-        self.__init_time_bar(length_in_sec)
+
+        self.__init_time_bar(media_info["duration_in_sec"])
         self.__time_bar.configure(state="normal")
 
         logger.info(f"{logger.vpw}: Successfully opened the video file and updated related widgets")

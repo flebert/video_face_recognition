@@ -1,4 +1,5 @@
 import os
+import threading
 
 import vlc
 import time
@@ -28,7 +29,9 @@ class VLCPlayer:
         self.__img_label.grid(row=0, column=0)
         self.__frame.grid_columnconfigure(0, weight=1)
 
-        self.__frame_handler = FrameHandler(self, self.__img_label)
+        self.__frame_handler = None
+
+        self.__events = {}
 
         logger.info(f"{logger.vlc}: Finished setting up the vlc media player")
 
@@ -40,6 +43,7 @@ class VLCPlayer:
         :param command: a function to be called once the event is triggered
         """
         if event_type in VLCPlayer.events:
+            self.__events = {VLCPlayer.events[event_type]: command}
             self.__vlc_event_manager.event_attach(VLCPlayer.events[event_type], command)
 
     def get_duration_in_sec(self):
@@ -99,9 +103,11 @@ class VLCPlayer:
         :type media_path: str
         """
         if self.__player.get_media() is not None:
-            file_name = os.path.basename(media_path)
-            file_name = file_name.split(".")[0]
-            self.__instance.vlm_stop_media(file_name)
+            # VLC stop creates deadlock if called from the same thread as the player was created from
+            # reason here:  video callback locks itself and waits until main thread finished but
+            #               main thread waits until stop was completed
+            stop_thread = threading.Thread(target=lambda: self.__player.stop(), daemon=True)
+            stop_thread.start()
             self.logger.info(f"{self.logger.vlc}: Current media file stopped")
         else:
             self.logger.info(f"{self.logger.vlc}: No current media file to stop")
@@ -130,6 +136,16 @@ class VLCPlayer:
         else:
             self.logger.info(f"{self.logger.vlc}: Media file was already running")
 
+    def __new_player(self):
+        """
+        Creates a new media player and registers all currently used events on its event manager
+        """
+        self.__player = self.__instance.media_player_new()
+        self.__vlc_event_manager = self.__player.event_manager()
+
+        for event in self.__events:
+            self.__vlc_event_manager.event_attach(event, self.__events[event])
+
     def open_media(self, media_path):
         """
         Opens the media file and starts playing it
@@ -139,15 +155,30 @@ class VLCPlayer:
         """
         # Open media source
         self.logger.info(f"{self.logger.vlc}: Start opening media file {media_path}")
+
+        self.logger.info(f"{self.logger.vlc}: Set new media in player")
+        if self.__frame_handler is not None:
+            self.__new_player()
+
         media = self.__instance.media_new(media_path)
-        media.get_mrl()
+
         self.__player.set_media(media)
+
+        self.logger.info(f"{self.logger.vlc}: New media was set in player")
 
         media.parse()
 
+        self.logger.info(f"{self.logger.vlc}: Activate FrameHandler for the media")
+        self.__frame_handler = FrameHandler(self, self.__img_label)
+        self.logger.info(f"{self.logger.vlc}: Successfully activated FrameHandler for the media")
+
         self.__player.play()
-        self.__frame_handler.start()
+
         self.logger.info(f"{self.logger.vlc}: Successfully opened the media file")
+
+        media_info = {"duration_in_sec": self.get_robust_duration_in_sec()}
+
+        return media_info
 
     def go_to_position(self, time_in_sec, update_gui_command, state_end_command):
         """
