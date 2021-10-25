@@ -11,8 +11,7 @@ Actor Face Recognition Project
    `face_recognition <https://github.com/ageitgey/face_recognition>`_ employs
    `dlib's <http://dlib.net/>`_ deep learning face recognition model.
 
-.. topic:: Trivia
-
+Trivia
     During development and testing, movie trailers and face encodings of their actors were used.
     This is the sole reason why the following examples focus on the Joker
     trailer and I named this project **Actor** Face Recognition. It can be used for any video
