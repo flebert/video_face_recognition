@@ -24,8 +24,25 @@ Features
 
 Installation
 ============
-This Software uses the python binding to access the locally installed VLC media
-player. Therefore, it can only be run if VLC is installed on the machine.
+Important
+    This Software uses the python bindings to access the locally installed VLC media
+    player. Therefore, **VLC has to be installed on the machine**.
+
+|  As a packaging and dependency management tool I used `Poetry <https://python-poetry.org/>`_.
+   Therefore, Poetry has to be installed. For a detailed guide view the documentation
+   `here <https://python-poetry.org/docs/#installation>`_.
+|  Once Poetry is installed and the git repository was downloaded. Ideally all one has
+   to do is to run in the project directory:
+
+    poetry install
+
+|  to install the dependencies listed in the poetry.lock file. If it was successful, congratulations
+   you are already finished with the installation.
+|  What if it fails:
+
+    Most likely the python version you used was not compatible.
+    For reference, during development I used the version 3.8.10 during the setup.
+
 
 How to open the video player ?
 ==============================
