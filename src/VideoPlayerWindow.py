@@ -36,7 +36,7 @@ class VideoPlayerWindow:
 
         # create root window and bind ways to close the window
         root = tk.Tk()
-        root.title("Actor Face Recognition")
+        root.title("Video Face Recognition")
         root.bind("<Escape>", lambda event: self.__close_window())
         root.protocol("WM_DELETE_WINDOW", lambda: self.__close_window())
         root.grid_rowconfigure(0, weight=1)
@@ -320,7 +320,7 @@ class VideoPlayerWindow:
 
 
 # starting VideoPlayerWindow with initial video path if given
-logging.basicConfig(filename="../actor_face_recognition.log",
+logging.basicConfig(filename="../video_face_recognition.log",
                     format='%(asctime)s %(levelname)s %(message)s',
                     filemode='w')
 
