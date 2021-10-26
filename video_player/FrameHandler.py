@@ -1,3 +1,7 @@
+"""
+This script contains a class to access the video callback of a vlc player and use the frames to perform
+face recognition and marking
+"""
 import ctypes
 
 import cv2

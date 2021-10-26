@@ -1,11 +1,15 @@
-import os
+"""
+Script which contains a class to manage a VLCPlayer, the first parameter is the tkinter Frame object
+in which the video should be displayed in
+"""
+
 import threading
 
 import vlc
 import time
 import tkinter as tk
 
-from src.FrameHandler import FrameHandler
+from video_player.FrameHandler import FrameHandler
 
 
 class VLCPlayer:
@@ -22,7 +26,7 @@ class VLCPlayer:
         self.__frame = frame
         """Frame where the vlc player should be shown in"""
 
-        self.logger = logger
+        self.__logger = logger
         """Logging object"""
 
         self.__img_label = tk.Label(frame, bd=-2, bg="black")
@@ -33,7 +37,7 @@ class VLCPlayer:
 
         self.__events = {}
 
-        logger.info(f"{logger.vlc}: Finished setting up the vlc media player")
+        self.__logger_info(f"Finished setting up the vlc media player")
 
     def register_event(self, event_type, command):
         """
@@ -95,12 +99,9 @@ class VLCPlayer:
         """
         self.__player.audio_set_volume(volume)
 
-    def stop_media(self, media_path):
+    def stop_media(self):
         """
-        Stops the media associated to path media_path
-
-        :param media_path: media file to close
-        :type media_path: str
+        Stops the current media
         """
         if self.__player.get_media() is not None:
             # VLC stop creates deadlock if called from the same thread as the player was created from
@@ -108,33 +109,33 @@ class VLCPlayer:
             #               main thread waits until stop was completed
             stop_thread = threading.Thread(target=lambda: self.__player.stop(), daemon=True)
             stop_thread.start()
-            self.logger.info(f"{self.logger.vlc}: Current media file stopped")
+            self.__logger_info(f"Current media file stopped")
         else:
-            self.logger.info(f"{self.logger.vlc}: No current media file to stop")
+            self.__logger_info(f"No current media file to stop")
 
     def pause_media(self):
         """
         Pauses the media in case the media is not already paused.
         """
         if self.__player.get_media() is None:
-            self.logger.info(f"{self.logger.vlc}: No media to pause found")
+            self.__logger_info(f"No media to pause found")
         elif vlc.State.Paused != self.__player.get_media().get_state():
             self.__player.pause()
-            self.logger.info(f"{self.logger.vlc}: Media is now paused")
+            self.__logger_info(f"Media is now paused")
         else:
-            self.logger.info(f"{self.logger.vlc}: Media was already paused")
+            self.__logger_info(f"Media was already paused")
 
     def resume_media(self):
         """
         Resumes the media in case the media is not already running
         """
         if self.__player.get_media() is None:
-            self.logger.info(f"{self.logger.vlc}: No media to resume found")
+            self.__logger_info(f"No media to resume found")
         elif vlc.State.Playing != self.__player.get_media().get_state():
             self.__player.play()
-            self.logger.info(f"{self.logger.vlc}: Resuming current media file")
+            self.__logger_info(f"Resuming current media file")
         else:
-            self.logger.info(f"{self.logger.vlc}: Media file was already running")
+            self.__logger_info(f"Media file was already running")
 
     def __new_player(self):
         """
@@ -154,9 +155,9 @@ class VLCPlayer:
         :type media_path: str
         """
         # Open media source
-        self.logger.info(f"{self.logger.vlc}: Start opening media file {media_path}")
+        self.__logger_info(f"Start opening media file {media_path}")
 
-        self.logger.info(f"{self.logger.vlc}: Set new media in player")
+        self.__logger_info(f"Set new media in player")
         if self.__frame_handler is not None:
             self.__new_player()
 
@@ -164,17 +165,17 @@ class VLCPlayer:
 
         self.__player.set_media(media)
 
-        self.logger.info(f"{self.logger.vlc}: New media was set in player")
+        self.__logger_info(f"New media was set in player")
 
         media.parse()
 
-        self.logger.info(f"{self.logger.vlc}: Activate FrameHandler for the media")
+        self.__logger_info(f"Activate FrameHandler for the media")
         self.__frame_handler = FrameHandler(self, self.__img_label)
-        self.logger.info(f"{self.logger.vlc}: Successfully activated FrameHandler for the media")
+        self.__logger_info(f"Successfully activated FrameHandler for the media")
 
         self.__player.play()
 
-        self.logger.info(f"{self.logger.vlc}: Successfully opened the media file")
+        self.__logger_info(f"Successfully opened the media file")
 
         media_info = {"duration_in_sec": self.get_robust_duration_in_sec()}
 
@@ -195,13 +196,13 @@ class VLCPlayer:
         if media is None:
             return
         if vlc.State.Ended == media.get_state():
-            self.logger.info(f"{self.logger.vlc}: Media file already ended, therefore restart it")
+            self.__logger_info(f"Media file already ended, therefore restart it")
             state_end_command(media.get_mrl())
         new_position = time_in_sec / self.get_duration_in_sec()
         self.__player.set_position(new_position)
         update_gui_command(self.get_duration_in_sec(), self.get_current_time_in_sec())
         pos_str = "{:.2f}".format(new_position)
-        self.logger.info(f"{self.logger.vlc}: Go to position {pos_str} of the media file")
+        self.__logger_info(f"Go to position {pos_str} of the media file")
 
     def get_fps(self):
         """
@@ -214,3 +215,9 @@ class VLCPlayer:
         Returns the vlc media player
         """
         return self.__player
+
+    def __logger_info(self, msg):
+        """
+        Adds a log info entry starting with VLCPlayer:
+        """
+        self.__logger.info(f"VLCPlayer: {msg}")

@@ -7,13 +7,12 @@ the frame is opened without any initial video file loaded.
 import os
 import sys
 import logging
-import time
 import tkinter as tk
 from tkinter import font, filedialog
 from PIL import Image
 from PIL.ImageTk import PhotoImage
 
-from src.VLCPlayer import VLCPlayer
+from video_player.VLCPlayer import VLCPlayer
 
 
 class VideoPlayerWindow:
@@ -21,16 +20,21 @@ class VideoPlayerWindow:
     Class which opens and manages a video player in a tkinter frame using the python-vlc library
     """
 
-    def __init__(self, initial_source=None):
+    def __init__(self, logger, initial_source=None):
         """
         Constructor of the VideoPlayerWindow
 
         Creates the frame including the video player and loads the first
         video file if the path was given
 
+        :param logger: object used to perform logging
+        :type logger: logging.Logger
+
         :param initial_source: path to the initial video file
         :type initial_source: str
         """
+        self.__logger = logger
+
         # path where images for pictures are stored
         resource_path = os.path.join(os.path.abspath(__file__), "..", "..", "resources")
 
@@ -128,7 +132,7 @@ class VideoPlayerWindow:
                                            increment=2)
         self.__volume_spinner.grid(row=1, column=4, sticky="NS")
         self.__volume_spinner.bind("<ButtonRelease-1>",
-                                   lambda event: logger.info(f"{logger.vpw}: Changed audio to {self.__volume.get()}"))
+                                   lambda event: self.__logger_info(f"Changed audio to {self.__volume.get()}"))
 
         def __change_audio():
             volume = self.__volume.get()
@@ -138,18 +142,18 @@ class VideoPlayerWindow:
 
         self.__volume.trace_add("write", lambda *event: __change_audio())
 
-        logger.info(f"{logger.vpw}: Finished setting up the root frame and its widgets")
+        self.__logger_info("Finished setting up the root frame and its widgets")
 
         self.source = initial_source
         """Source (Path) of the currently running video file"""
         if initial_source is not None:
-            logger.info(f"{logger.vpw}: Path to initial video file was given")
+            self.__logger_info("Path to initial video file was given")
             self.__play_video(initial_source)
         self.__open_window()
 
     def __open_window(self):
         """Open the root window with initial width and height and display it"""
-        logger.info(f"{logger.vpw}: Start displaying the root frame")
+        self.__logger_info("Start displaying the root frame")
         self.__root.geometry("400x400")
         self.__root.mainloop()
 
@@ -157,36 +161,36 @@ class VideoPlayerWindow:
         """
         Closes the root window and related components such as the vlc video player
         """
-        logger.info(f"{logger.vpw}: Start releasing media files and close root frame")
-        self.__vlc_player.stop_media(self.source)
+        self.__logger_info("Start releasing media files and close root frame")
+        self.__vlc_player.stop_media()
         self.__root.destroy()
-        logger.info(f"{logger.vpw}: Media files were released and the root frame closed")
+        self.__logger_info("Media files were released and the root frame closed")
 
     def __open_video(self):
         """
         Opens a dialog to select a video file to open and if a file was selected,
         closes the current video and opens the new one
         """
-        logger.info(f"{logger.vpw}: Menubar File->Open was clicked")
+        self.__logger_info("Menubar File->Open was clicked")
         self.__pause_video()
-        logger.info(f"{logger.vpw}: Open File Chooser dialog to open video file")
+        self.__logger_info("Open File Chooser dialog to open video file")
         new_source = filedialog.askopenfilename(title="Select video file")
         if len(new_source) != 0 and new_source != self.source:
-            logger.info(f"{logger.vpw}: Try to open file {new_source}")
+            self.__logger_info(f"Try to open file {new_source}")
             old_source = self.source
-            self.__vlc_player.stop_media(old_source)
+            self.__vlc_player.stop_media()
             try:
                 self.__play_video(new_source)
             except:
-                logger.warning(f"{logger.vpw}: Could not play the new file")
+                self.__logger_info("Could not play the new file")
                 if old_source is not None:
-                    logger.warning(f"{logger.vpw}: Open previous video file {old_source}")
+                    self.__logger_info(f"Open previous video file {old_source}")
                     self.__play_video(old_source)
             self.__resume_video()
         elif new_source == self.source:
-            logger.info(f"{logger.vpw}: video file was identical to currently loaded one, continue with current one")
+            self.__logger_info("video file was identical to currently loaded one, continue with current one")
         else:
-            logger.info(f"{logger.vpw}: No video file selected, continue with current one")
+            self.__logger_info("No video file selected, continue with current one")
 
     def __play_video(self, source):
         """
@@ -197,7 +201,7 @@ class VideoPlayerWindow:
         :param source: the path to the video file to play
         :type source: str
         """
-        logger.info(f"{logger.vpw}: Starting opening the video file {source}")
+        self.__logger_info(f"Starting opening the video file {source}")
         self.source = source
 
         media_info = self.__vlc_player.open_media(source)
@@ -207,23 +211,23 @@ class VideoPlayerWindow:
         self.__init_time_bar(media_info["duration_in_sec"])
         self.__time_bar.configure(state="normal")
 
-        logger.info(f"{logger.vpw}: Successfully opened the video file and updated related widgets")
+        self.__logger_info("Successfully opened the video file and updated related widgets")
         self.__resume_video()
 
     def __pause_video(self, event=None):
         """Pauses the currently running video"""
         if event is not None:
-            logger.info(f"{logger.vpw}: Ensure video is paused to allow jump to another position in the video file")
+            self.__logger_info("Ensure video is paused to allow jump to another position in the video file")
         else:
             time = self.__get_current_time(self.__time.get())
-            logger.info(f"{logger.vpw}: Pause current video file at {time}")
+            self.__logger_info(f"Pause current video file at {time}")
         self.__play_button.configure(image=self.__play_img, command=self.__resume_video)
         self.__vlc_player.pause_media()
 
     def __resume_video(self):
         """Resumes the currently paused video"""
         time = self.__get_current_time(self.__time.get())
-        logger.info(f"{logger.vpw}: Resume current video file at {time}")
+        self.__logger_info(f"Resume current video file at {time}")
         self.__play_button.configure(image=self.__stop_img, command=self.__pause_video)
         self.__vlc_player.resume_media()
 
@@ -236,7 +240,7 @@ class VideoPlayerWindow:
         :param length_in_sec: length of the current video file in seconds
         :type length_in_sec: int
         """
-        logger.info(f"{logger.vpw}: Update time bar and label to fit video duration")
+        self.__logger_info("Update time bar and label to fit video duration")
 
         # number of overall seconds to make time scroll bar work in units of seconds
         self.__time_bar.configure(to=length_in_sec)
@@ -268,7 +272,8 @@ class VideoPlayerWindow:
             unit_list.append(str(unit).zfill(2))
         self.__rest_time_label.configure(text=":".join(unit_list))
 
-    def __get_current_time(self, current_time_in_sec):
+    @staticmethod
+    def __get_current_time(current_time_in_sec):
         """
         Returns the current time in the video file in hh:mm:ss format
 
@@ -298,8 +303,8 @@ class VideoPlayerWindow:
         :param current_time_in_ms: current time in the video file in milliseconds
         :type current_time_in_ms: int
         """
-        self.__update_rest_time_label(length_in_sec, current_time_in_ms//1000)
-        self.__time.set(current_time_in_ms//1000)
+        self.__update_rest_time_label(length_in_sec, current_time_in_ms // 1000)
+        self.__time.set(current_time_in_ms // 1000)
 
     def __switch_activation_state(self, index):
         """
@@ -310,28 +315,33 @@ class VideoPlayerWindow:
         :type index: int
         """
         if self.__is_activated.get():
-            logger.info(f"{logger.vpw}: Face detector/recognizer was activated")
+            self.__logger_info("Face detector/recognizer was activated")
             self.__menubar.entryconfigure(index, label="Detector (activated)")
             self.__root.resizable(False, False)
         else:
-            logger.info(f"{logger.vpw}: Face detector/recognizer was deactivated")
+            self.__logger_info("Face detector/recognizer was deactivated")
             self.__menubar.entryconfigure(index, label="Detector (deactivated)")
             self.__root.resizable(True, True)
 
+    def __logger_info(self, msg):
+        """
+        Adds a log info entry starting with VideoPlayerWindow
+        """
+        self.__logger.info(f"VideoPlayerWindow: {msg}")
 
-# starting VideoPlayerWindow with initial video path if given
-logging.basicConfig(filename="../video_face_recognition.log",
-                    format='%(asctime)s %(levelname)s %(message)s',
-                    filemode='w')
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-logger.vpw = "VideoPlayerWindow"
-logger.vlc = "VLCPlayer"
+def open_window(initial_source=None):
+    # starting VideoPlayerWindow with initial video path if given
+    logging.basicConfig(filename="../video_face_recognition.log",
+                        format='%(asctime)s %(levelname)s %(message)s',
+                        filemode='w')
 
-if len(sys.argv) > 1:
-    logger.info(f"Open {logger.vpw} with initial video {sys.argv[1]}")
-    VideoPlayerWindow(sys.argv[1])
-else:
-    logger.info(f"Open {logger.vpw} without initial video")
-    VideoPlayerWindow()
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
+    if initial_source is not None:
+        logger.info(f"Open VideoPlayerWindow with initial video {initial_source}")
+        VideoPlayerWindow(logger, initial_source)
+    else:
+        logger.info(f"Open VideoPlayerWindow without initial video")
+        VideoPlayerWindow(logger)
