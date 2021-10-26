@@ -27,5 +27,27 @@ Installation
 This Software uses the python binding to access the locally installed VLC media
 player. Therefore, it can only be run if VLC is installed on the machine.
 
-Usage
-======
+How to open the video player ?
+==============================
+To open the GUI including the video player and tkinter frame one has to:
+
+#. Navigate into the video_face_recognition directory
+#. Open a python interpreter
+#. Import the video_player module
+#. |  Open the window using the so called open_window() method
+   |  (Alternatively open_window accepts one parameter, the path to an initial video file which should be opened.)
+
+Note:
+ Video files can also be switched using the GUI later one.
+
+**Example using Windows 10**::
+
+    cd path_to_directory\video_face_recognition
+    py
+    import video_player as vp
+    # without initial video file
+    vp.open_window()
+
+    # or with an initial video file
+    vp.open_window("JOKER.mp4")
+

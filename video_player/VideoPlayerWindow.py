@@ -4,11 +4,11 @@ given over the command line should be the path to the video file to open. If the
 the frame is opened without any initial video file loaded.
 """
 
-import os
-import sys
 import logging
+import os
 import tkinter as tk
 from tkinter import font, filedialog
+
 from PIL import Image
 from PIL.ImageTk import PhotoImage
 
@@ -155,6 +155,7 @@ class VideoPlayerWindow:
         """Open the root window with initial width and height and display it"""
         self.__logger_info("Start displaying the root frame")
         self.__root.geometry("400x400")
+        self.__root.lift()
         self.__root.mainloop()
 
     def __close_window(self):
@@ -331,6 +332,12 @@ class VideoPlayerWindow:
 
 
 def open_window(initial_source=None):
+    """
+    Open the video player window
+
+    :param initial_source: The path to the video file to open during program start
+    :type initial_source: str
+    """
     # starting VideoPlayerWindow with initial video path if given
     logging.basicConfig(filename="../video_face_recognition.log",
                         format='%(asctime)s %(levelname)s %(message)s',
