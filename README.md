@@ -94,4 +94,5 @@ as there does not exist any face encoding.
 
 Now it should work, feel free to try :)
 
+See my example extracted from the JOKER trailer:
 ![Joker Trailer with a detected face](resources/face_detected.jpg "Face recognition on JOKER Trailer")
