@@ -1,24 +1,23 @@
-==============================
 Video Face Recognition Project
 ==============================
-|  This library provides a simple tkinter GUI to view video files and recognize
-   faces in real-time. These faces can be labelled using beforehand created face encodings.
-|  As such, the library provides the necessary functionality to create these face
-   encodings and open/display videos based on menu buttons.
-|  To achieve this, this library builds a wrapper to the `python-vlc <https://github.com/oaubert/python-vlc>`_
-   library to load and display the video
-   files using the VLC software. To recognize/detect faces and to create face encodings
-   `face_recognition <https://github.com/ageitgey/face_recognition>`_ is used.
-   `face_recognition <https://github.com/ageitgey/face_recognition>`_ employs
-   `dlib's <http://dlib.net/>`_ deep learning face recognition model.
+This library provides a simple tkinter GUI to view video files and recognize 
+faces in real-time. These faces can be labelled using beforehand created face encodings.
+As such, the library provides the necessary functionality to create these face
+encodings and open/display videos based on menu buttons.  
+To achieve this, this library builds a wrapper to the [python-vlc](https://github.com/oaubert/python-vlc) library to load and display the video files using the VLC software.  
+To recognize/detect faces and to create face encodings [face_recognition](https://github.com/ageitgey/face_recognition) is used. [face_recognition](https://github.com/ageitgey/face_recognition) employs [dlib's](http://dlib.net/) deep learning face recognition model.
 
-Trivia
-    During development and testing, movie trailers and face encodings of their actors were used.
-    This is the sole reason why the following examples focus on the Joker
-    trailer. It can be used for any video and all human faces.
+---
+**Trivia**
+
+During development and testing, movie trailers and face encodings of their actors were used.
+This is the sole reason why the following examples focus on the Joker
+trailer. It can be used for any video and all human faces.
+
+---
 
 Installation
-============
+------------
 Important
     This Software uses the python bindings to access the locally installed VLC media
     player. Therefore, **VLC has to be installed on the machine**.
@@ -40,7 +39,7 @@ Important
 
 
 How to open the video player ?
-==============================
+-------------------------------
 To open the GUI including the video player and tkinter frame one has to:
 
 #. Navigate into the video_face_recognition directory
@@ -72,7 +71,7 @@ Other possible input parameters:
 
 
 Preparing the Face Recognition
-===============================
+-------------------------------
 The first step after opening the Window is, to make sure that for each person to detect a valid face encoding exists.
 The number of known faces is shown in the Detector->Activated label. 
 
@@ -88,7 +87,7 @@ If a valid encoding was generated it is stored in the encodings directory. Durin
 encodings are read from there.
 
 Starting the Face Recognition
-=============================
+-----------------------------
 If we did not start the application directly with a video file (see How to open the video player ?), 
 open it by clicking on File->Open. From there you can navigate through your directories and open your video file.
 
