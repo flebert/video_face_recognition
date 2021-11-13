@@ -15,7 +15,27 @@ from video_player.FrameHandler import FrameHandler
 class VLCPlayer:
     events = {"MediaPlayerTimeChanged": vlc.EventType.MediaPlayerTimeChanged}
 
-    def __init__(self, frame, logger):
+    def __init__(self, frame, logger, frames_to_skip, face_recognition_model):
+        """
+        Constructor of the VLCPlayer
+
+        The VLCPlayer manages the loading/playing of video files
+
+        :param logger: object used to perform logging
+        :type logger: logging.Logger
+
+        :param frame: the tkinter frame in which the video should be shown in
+        :type frame: tkinter.Frame
+
+        :param frames_to_skip: Number of frames to skip, meaning if frames_to_skip=3 only every fourth frame is shown
+        :type frames_to_skip: int
+
+        :param face_recognition_model: The model used for face recognition, either "cnn" which is accurate, slower and
+        used GPU or "hog" which is faster but not as precise
+        :type face_recognition_model: str
+        """
+        self.__frames_to_skip, self.__face_recognition_model = frames_to_skip, face_recognition_model
+
         self.__instance = vlc.Instance()
         """VLC instance used to create the media player"""
         self.__player = self.__instance.media_player_new()
@@ -147,12 +167,18 @@ class VLCPlayer:
         for event in self.__events:
             self.__vlc_event_manager.event_attach(event, self.__events[event])
 
-    def open_media(self, media_path):
+    def open_media(self, media_path, is_detection_activated, enc_manager):
         """
         Opens the media file and starts playing it
 
         :param media_path: path of the media file to open
         :type media_path: str
+
+        :param is_detection_activated: tk.BooleanVar showing whether face should be detected
+        :type is_detection_activated: tkinter.BooleanVar
+
+        :param enc_manager: a manager object to access and write face encodings on disk
+        :type enc_manager: video_player.EncodingManager.EncodingManager
         """
         # Open media source
         self.__logger_info(f"Start opening media file {media_path}")
@@ -170,7 +196,8 @@ class VLCPlayer:
         media.parse()
 
         self.__logger_info(f"Activate FrameHandler for the media")
-        self.__frame_handler = FrameHandler(self, self.__img_label)
+        self.__frame_handler = FrameHandler(self, self.__img_label, is_detection_activated,
+                                            enc_manager, self.__frames_to_skip, self.__face_recognition_model)
         self.__logger_info(f"Successfully activated FrameHandler for the media")
 
         self.__player.play()
@@ -219,5 +246,14 @@ class VLCPlayer:
     def __logger_info(self, msg):
         """
         Adds a log info entry starting with VLCPlayer:
+
+        :param msg: the message to write
+        :type msg: str
         """
         self.__logger.info(f"VLCPlayer: {msg}")
+
+    def get_frame_handler(self):
+        """
+        Returns the frame handler, which manages face recognition on the vlc video callback
+        """
+        return self.__frame_handler

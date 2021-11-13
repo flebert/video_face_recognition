@@ -6,3 +6,7 @@
 
 # automatically generated log file
 video_face_recognition.log
+
+# face encodings
+/encodings/*
+/encodings/joker

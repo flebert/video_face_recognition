@@ -12,7 +12,9 @@ from tkinter import font, filedialog
 from PIL import Image
 from PIL.ImageTk import PhotoImage
 
+from video_player.EncodingManager import EncodingManager
 from video_player.VLCPlayer import VLCPlayer
+import face_recognition as fr
 
 
 class VideoPlayerWindow:
@@ -20,7 +22,7 @@ class VideoPlayerWindow:
     Class which opens and manages a video player in a tkinter frame using the python-vlc library
     """
 
-    def __init__(self, logger, initial_source=None):
+    def __init__(self, logger, initial_source, num_jitters, frames_to_skip, face_recognition_model):
         """
         Constructor of the VideoPlayerWindow
 
@@ -32,7 +34,20 @@ class VideoPlayerWindow:
 
         :param initial_source: path to the initial video file
         :type initial_source: str
+
+        :param num_jitters: How many times to re-sample the face when calculating encoding
+        :type num_jitters: int
+
+        :param frames_to_skip: The number of frames to skip when face detection is activated
+        :type frames_to_skip: int
+
+        :param face_recognition_model: The model used for face recognition, either "cnn" which is accurate, slower and
+        used GPU or "hog" which is faster but not as precise
+        :type face_recognition_model: str
+
         """
+        self.__num_jitters = num_jitters
+
         self.__logger = logger
 
         # path where images for pictures are stored
@@ -48,19 +63,33 @@ class VideoPlayerWindow:
         self.__root = root
         """The root window containing all the video player and the widgets"""
 
+        # Create encoding manager
+        self.__enc_manager = EncodingManager(self.__logger)
+
         # setup menubar
         self.__menubar = tk.Menu(self.__root, tearoff=0)
         """The menubar of the main frame"""
         file = tk.Menu(self.__menubar, tearoff=0)
-        file.add_command(label="Open", command=lambda: self.__open_video())
+        file.add_command(label="Open", command=self.__open_video)
         self.__menubar.add_cascade(label="File", menu=file)
 
+        encoding = tk.Menu(self.__menubar, tearoff=0)
+        self.__menubar.add_cascade(label="Encoding", menu=encoding)
+
         detector = tk.Menu(self.__menubar, tearoff=0)
+        encoding.add_command(label="Add face encoding", command=lambda: self.__open_encoding_creation_dialog(detector))
         self.__is_activated = tk.BooleanVar()
         self.__is_activated.set(False)
-        self.__is_activated.trace_add("write", lambda *args: self.__switch_activation_state(1))
-        detector.add_radiobutton(label="Activated", variable=self.__is_activated, value=True)
-        detector.add_radiobutton(label="Deactivated", variable=self.__is_activated, value=False)
+        self.__is_activated.trace_add("write", lambda *args: self.__switch_activation_state(2))
+
+        len_known_encodings = len(self.__enc_manager.known_face_encodings)
+        if len_known_encodings == 0:
+            detector.add_radiobutton(label="Activate (no known encodings)", variable=self.__is_activated,
+                                     value=True, state=tk.DISABLED)
+        else:
+            detector.add_radiobutton(label=f"Activate ({len_known_encodings} face encodings)",
+                                     variable=self.__is_activated, value=True)
+        detector.add_radiobutton(label="Deactivate", variable=self.__is_activated, value=False)
         self.__menubar.add_cascade(label="Detector (deactivated)", menu=detector)
         self.__root.config(menu=self.__menubar)
 
@@ -76,7 +105,7 @@ class VideoPlayerWindow:
         """The main frame of the application, contains the video player"""
 
         # Creating VLC player manager
-        self.__vlc_player = VLCPlayer(self.__frame, logger)
+        self.__vlc_player = VLCPlayer(self.__frame, logger, frames_to_skip, face_recognition_model)
         self.__vlc_player.register_event("MediaPlayerTimeChanged",
                                          lambda event: self.__update_time(self.__vlc_player.get_duration_in_sec(),
                                                                           self.__vlc_player.get_current_time_in_ms()))
@@ -205,7 +234,7 @@ class VideoPlayerWindow:
         self.__logger_info(f"Starting opening the video file {source}")
         self.source = source
 
-        media_info = self.__vlc_player.open_media(source)
+        media_info = self.__vlc_player.open_media(source, self.__is_activated, self.__enc_manager)
 
         self.__play_button.configure(state="normal")
 
@@ -318,26 +347,66 @@ class VideoPlayerWindow:
         if self.__is_activated.get():
             self.__logger_info("Face detector/recognizer was activated")
             self.__menubar.entryconfigure(index, label="Detector (activated)")
-            self.__root.resizable(False, False)
         else:
             self.__logger_info("Face detector/recognizer was deactivated")
             self.__menubar.entryconfigure(index, label="Detector (deactivated)")
-            self.__root.resizable(True, True)
+
+    def __open_encoding_creation_dialog(self, menu):
+        """
+        Opens first a dialog to choose a picture to derive the encoding from
+        and then forwards it to the encoding manager which stores it in a file
+
+        :param: the menu the submenu should be updated
+        :type: tk.Menu
+        """
+        self.__logger_info("Menubar Encoding-> 'Add face encoding' was clicked")
+        self.__pause_video()
+        self.__logger_info("Open File Chooser dialog to select picture")
+        pic_types = r"*.jpeg *.jpg *.JPG *.JPEG *.gif *.GIF *.png *.PNG"
+        file_types = []
+        for pic_type in pic_types.split(" "):
+            file_types.append(("pictures", pic_type))
+        new_source = filedialog.askopenfilename(title="Select picture",
+                                                filetypes=file_types)
+
+        if len(new_source) != 0:
+            img = fr.load_image_file(new_source)
+            encoding = fr.face_encodings(img, model="large", num_jitters=self.__num_jitters)[0]
+
+            name = os.path.basename(new_source).split(".")[0]
+            self.__enc_manager.add_encoding(name, encoding)
+
+            menu.entryconfigure(0, label=f"Activate ({len(self.__enc_manager.known_face_encodings)} face encodings)",
+                                state=tk.NORMAL)
 
     def __logger_info(self, msg):
         """
         Adds a log info entry starting with VideoPlayerWindow
+
+        :param msg: the message to write
+        :type msg: str
         """
         self.__logger.info(f"VideoPlayerWindow: {msg}")
 
 
-def open_window(initial_source=None):
+def open_window(initial_source=None, num_jitters=20, frames_to_skip=3, face_recognition_model="hog"):
     """
     Open the video player window
 
     :param initial_source: The path to the video file to open during program start
     :type initial_source: str
+
+    :param num_jitters: How many times to re-sample the face when calculating encoding
+    :type num_jitters: int
+
+    :param frames_to_skip: The number of frames to skip when face detection is activated
+    :type frames_to_skip: int
+
+    :param face_recognition_model: The model used for face recognition, either "cnn" which is accurate, slower and used GPU or
+    "hog" which is faster but not as precise
+    :type face_recognition_model: str
     """
+
     # starting VideoPlayerWindow with initial video path if given
     logging.basicConfig(filename="../video_face_recognition.log",
                         format='%(asctime)s %(levelname)s %(message)s',
@@ -346,9 +415,23 @@ def open_window(initial_source=None):
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
+    # set meaningful bounds
+    if num_jitters > 100:
+        num_jitters = 100
+    elif num_jitters < 1:
+        num_jitters = 1
+
+    if frames_to_skip > 20:
+        frames_to_skip = 20
+    elif frames_to_skip < 0:
+        frames_to_skip = 0
+
+    if face_recognition_model not in ["cnn", "hog"]:
+        face_recognition_model = "hog"
+
     if initial_source is not None:
         logger.info(f"Open VideoPlayerWindow with initial video {initial_source}")
-        VideoPlayerWindow(logger, initial_source)
     else:
         logger.info(f"Open VideoPlayerWindow without initial video")
-        VideoPlayerWindow(logger)
+
+    VideoPlayerWindow(logger, initial_source, num_jitters, frames_to_skip, face_recognition_model)
