@@ -18,40 +18,38 @@ trailer. It can be used for any video and all human faces.
 
 Installation
 ------------
-Important
-    This Software uses the python bindings to access the locally installed VLC media
-    player. Therefore, **VLC has to be installed on the machine**.
+---
+**Important**
 
-|  As a packaging and dependency management tool I used `Poetry <https://python-poetry.org/>`_.
-   Therefore, Poetry has to be installed. For a detailed guide view the documentation
-   `here <https://python-poetry.org/docs/#installation>`_.
-|  Once Poetry is installed and the git repository was downloaded. Ideally all one has
-   to do is to run in the project directory:
+This Software uses the python bindings to access the locally installed VLC media
+player. Therefore, **VLC has to be installed on the machine**.
+
+---
+As a packaging and dependency management tool I used [Poetry](https://python-poetry.org/). Therefore, Poetry has to be installed. 
+For a detailed guide view the documentation [here](https://python-poetry.org/docs/#installation>).  
+Once Poetry is installed and the git repository was downloaded. Ideally all one has to do is to run in the project directory:
 
     poetry install
 
-|  to install the dependencies listed in the poetry.lock file. If it was successful, congratulations
-   you are already finished with the installation.
-|  What if it fails:
+to install the dependencies listed in the poetry.lock file. If it was successful, congratulations you are already finished 
+with the installation. What if it fails:
 
     Most likely the python version you used was not compatible.
     For reference, during development I used the version 3.8.10.
 
-
-How to open the video player ?
+How to open the video player?
 -------------------------------
 To open the GUI including the video player and tkinter frame one has to:
 
-#. Navigate into the video_face_recognition directory
-#. Open a python interpreter
-#. Import the video_player module
-#. |  Open the window using the so called open_window() method
-   |  (Alternatively open_window accepts one parameter, the path to an initial video file which should be opened.)
+1. Navigate into the video_face_recognition directory
+2. Open a python interpreter
+3. Import the video_player module
+4. Open the window using the so called open_window() method  
+   (Alternatively open_window accepts one parameter, the path to an initial video file which should be opened.)
 
-Note:
- Video files can also be switched using the GUI later one.
+Note: Video files can also be switched using the GUI later one.
 
-**Example using Windows 10**::
+**Example using Windows 10**:
 
     cd path_to_directory\video_face_recognition
     py
@@ -79,16 +77,16 @@ To add face encodings click on Encoding->Add face encoding. This will open a dia
 the selected image is then searched for faces and used to create the face encoding.
 The file has to satisfy two properties:
 
-#. There is only one face in the file.
-#. The file name has to be the name of the person as it is used in this way.
+1. There is only one face in the file.
+2. The file name has to be the name of the person as it is used in this way.  
    Alternatively renaming the .encoding file does the trick for you.
 
-If a valid encoding was generated it is stored in the encodings directory. During start of the application all
+If a valid encoding was generated, it is stored in the encodings directory. During start of the application all
 encodings are read from there.
 
 Starting the Face Recognition
 -----------------------------
-If we did not start the application directly with a video file (see How to open the video player ?), 
+If we did not start the application directly with a video file (see How to open the video player?), 
 open it by clicking on File->Open. From there you can navigate through your directories and open your video file.
 
 The last step to be done, is to activate the face recognition using Detector->Activate. This option is disabled as long
